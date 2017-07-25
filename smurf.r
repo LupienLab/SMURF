@@ -115,7 +115,7 @@ write.table(myd,"Mutated_Regions.txt",sep="\t",col.names=T,row.names=F,quote=F)
 write.table(myd3,"Mutated_Regions_Freq3.txt",sep="\t",col.names=T,row.names=F,quote=F)
 write.table(myd0.05,"Mutated_Regions_Freq3_qval0.05.txt",sep="\t",col.names=T,row.names=F,quote=F)
 write.table(myd[,6:8],"Mutated_Regions_allmut_DistalREAndProm.bed",sep="\t",col.names=F,row.names=F,quote=F)
-write.table(myd0.05[,6:8],"Mutated_Regions_sigmut0.05_DistalREAndProm.bed",sep="\t",col.names=F,row.names=F,quote=F)
+write.table(myd0.05[,6:8],"Mutated_Regions_Freq3_qval0.05_DistalREAndProm.bed",sep="\t",col.names=F,row.names=F,quote=F)
 
 #Make QQplot
 pdf("QQplot_Freq3.pdf",height=6,width=9)
@@ -140,24 +140,24 @@ mysum<-paste('myRegions:\t',nrow(peaks),'\n',
 write.table(mysum,file="summary.txt",quote=F,row.names=F,col.names=F)
 
 #generate bed file of sig mutated regions annotated to DistalRE for input into c3d
-forc3d<-myd[which(myd$pbin.adj<=0.05 & myd$peakANNO == "DistalRE"),6:8]
-write.table(forc3d,"Mutated_Regions_sigmut0.05_DistalREs_forc3d.bed",sep="\t",col.names=F,row.names=F,quote=F)
+forc3d<-myd0.05[which(myd0.05$peakANNO == "DistalRE"),6:8]
+write.table(forc3d,"Mutated_Regions_Freq3_qval0.05_DistalRE.bed",sep="\t",col.names=F,row.names=F,quote=F)
 
 
 #plot in black and white the peaks pvalue vs mutation rate
 if (nrow(myd0.05)>0) {
-	pdf("hotspotsig0.05.pdf",height=8,width=12)
+	pdf("Mutated_Regions_Freq3_qval0.05.pdf",height=8,width=12)
 	mymax<-ceiling(max(myd0.05$neglog10qval)/10)*10
 	plot(myd0.05$peakMUTr,myd0.05$neglog10qval,ylab="-log10(Qvalue)",xlab="Region Mutation Rate",ylim=c(0,mymax),pch=16,lwd=3)
 	dev.off()
 }
 
 #Plot
-if (nrow(myd0.052)>0) {
+if (nrow(myd0.05)>0) {
 	myd0.052<-transform(myd0.05, colour = rep("palevioletred",nrow(myd0.05)),stringsAsFactors=FALSE)
 	myd0.052$colour[which(myd0.052$peakANNO == "DistalRE")]<-"lightblue3"
 
-	pdf("hotspotsig0.05_Promoters_VS_DistalREs.pdf",height=8,width=12)
+	pdf("Mutated_Regions_Freq3_qval0.05_Promoters_VS_DistalREs.pdf",height=8,width=12)
 	numEnh<-nrow(myd0.052[which(myd0.052$peakANNO == "DistalRE"),])
 	numProm<-nrow(myd0.052[which(myd0.052$peakANNO != "DistalRE"),])
 	mymax<-ceiling(max(myd0.052$neglog10qval)/10)*10

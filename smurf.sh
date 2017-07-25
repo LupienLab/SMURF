@@ -1,26 +1,29 @@
 #!/bin/bash
 #$ -cwd
 #$ -N smurf
-#$ -o logs/smurf.log
 #$ -j y
 #$ -q lupiengroup
 #$ -S /bin/bash
 
 #-o = ouput dir
 #-v = path to raw VCF files; all files must be placed directly under this folder; at the moment sample names are created by removing portions of file names after "_"
+#-s = separator in the names of the vcf files; the string given here and any character that follows will be removed from the vcf file names to create the sample names; eg: "sample1_cohort1.vcf", with << -s _ >> the sample name will be "sample1"; special regex characters cannot be used alone (eg ? or .) 
 #-b = encode blacklist 
 #-r = genomic regions of interest in bed format; should have 4 columns:chr,start,end,name(for example sample name but can be anything)
 #-a = annotation file for promoters, eg:gencode
+#-m = method to use for BMR calculation; should be either 'global' (=bmr is total number of mutations (Across all samples) in regions divided by total bp in regions) or 'peak' (=bmr is  calculated based on which samples have mutations in that region; the individual sample bmr is calculated as for global, and the average of the BMRs for the samples represented in the peak is taken as the peak BMR.)
 
-while getopts o:v:b:r:a: option
+while getopts o:v:s:b:r:a:m: option
 do
         case "${option}"
         in
                 o) OUTDIR=${OPTARG};;
                 v) VCFDIR=${OPTARG};;
+				s) MYSEP=${OPTARG};;
                 b) BLACKLIST=${OPTARG};;
                 r) REGIONS=${OPTARG};;
-		a) ANNO=${OPTARG};;
+				a) ANNO=${OPTARG};;
+				m) METHOD=${OPTARG};;	
         esac
 done
 
@@ -65,7 +68,7 @@ cat $OUTDIR/file_list.txt | while read i; do
     basename $i >> $OUTDIR/tmpfile.txt
 done
  
-cat $OUTDIR/tmpfile.txt|sed 's/_.*//' > $OUTDIR/names.txt
+cat $OUTDIR/tmpfile.txt|sed "s/$MYSEP.*//" > $OUTDIR/names.txt
 mynames=$(cat $OUTDIR/names.txt| tr -s '\n' ' ')
 
 #Make concatenanted VCF file
@@ -88,7 +91,7 @@ rm $OUTDIR/tmpfile.txt
 
 
 #Annotate genomic regions with promoter/Enhancer category
-mapBed -c 4 -o distinct -null "Enhancer" -a $REGIONS -b $ANNO > $OUTDIR/annotated_regions.txt
+mapBed -c 4 -o distinct -null "DistalRE" -a $REGIONS -b $ANNO > $OUTDIR/annotated_regions.txt
 
 #Run hotspot analysis
-Rscript /mnt/work1/users/lupiengroup/CommonScripts/SMURF/smurf.r "$OUTDIR"
+Rscript /mnt/work1/users/lupiengroup/CommonScripts/SMURF/smurf_v2.r "$OUTDIR" "$METHOD"
