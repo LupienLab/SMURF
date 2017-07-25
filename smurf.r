@@ -85,20 +85,21 @@ myd<-transform(peaks.counts,
 
 
 for (i in 1:nrow(myd)){
-  s.in.peak<-df[which(df[,17]==myd[i,1]),5] #which MutSamples samples have mutations in that region
-  bmr.peak<-mean(mutatedsamples.counts[which(mutatedsamples.counts[,1] %in% s.in.peak),5]) #average of the mutation rates of the samples with a mutation in that peak
+  s.in.peak<-df[which(df[,"peakID"]==myd[i,"peakID"]),"MutSamples"] #which MutSamples samples have mutations in that region
+  bmr.peak<-mean(mutatedsamples.counts[which(mutatedsamples.counts[,"MutSamples"] %in% s.in.peak),"bmr.sample"]) #average of the mutation rates of the samples with a mutation in that peak
+  myd$FreqUnique[i]<-length(unique(s.in.peak)) #the number of unique mutated samples in the peak
+  myd$peakLEN[i]<-peaks[which(peaks[,"peakID"]==myd[i,"peakID"]),"lengths"]
+  myd$peakANNO[i]<-peaks[which(peaks[,"peakID"]==myd[i,"peakID"]),"annotation"]
+  myd$chr[i]<-df[which(df[,"peakID"]==myd[i,"peakID"])[1],"chr"]
+  myd$start[i]<-df[which(df[,"peakID"]==myd[i,"peakID"])[1],"start"]
+  myd$end[i]<-df[which(df[,"peakID"]==myd[i,"peakID"])[1],"end"]
   myd$MutSamples[i]<-as.character(paste(s.in.peak,collapse=",")) 
   myd$MutSamplesunique[i]<-as.character(paste(unique(s.in.peak),collapse=",")) #the list of unique MutSamples samples with muts in this region
-  myd$chr[i]<-df[which(df[,17]==myd[i,1])[1],1]
-  myd$start[i]<-df[which(df[,17]==myd[i,1])[1],2]
-  myd$end[i]<-df[which(df[,17]==myd[i,1])[1],3]
-  myd$FreqUnique[i]<-length(unique(s.in.peak)) #the number of samples in that list of unique samples
-  myd$peakLEN[i]<-peaks[which(peaks[,7]==myd[i,1]),6]
-  myd$peakANNO[i]<-peaks[which(peaks[,7]==myd[i,1]),5]
-  myd$peakMUTr[i]=myd[i,2]/myd[i,4]
+  myd$peakMUTr[i]<-myd[i,"Freq"]/myd[i,"peakLEN"]
   if (method=="global") {myd$pbin[i]<-binom.test(x=myd$FreqUnique[i],n=myd$peakLEN[i],p=bmr.global,alternative="greater")$p.value}
   if (method=="peak") {myd$pbin[i]<-binom.test(x=myd$FreqUnique[i],n=myd$peakLEN[i],p=bmr.peak,alternative="greater")$p.value}	  
 }
+
 
 
 

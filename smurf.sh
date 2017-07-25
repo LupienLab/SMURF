@@ -5,8 +5,11 @@
 #$ -q lupiengroup
 #$ -S /bin/bash
 
+#SMURF v3.0
+#Written by Paul Guilhamon
+
 #-o = ouput dir
-#-v = path to raw VCF files; all files must be placed directly under this folder; at the moment sample names are created by removing portions of file names after "_"
+#-v = path to raw VCF files; all files must be placed directly under this folder
 #-s = separator in the names of the vcf files; the string given here and any character that follows will be removed from the vcf file names to create the sample names; eg: "sample1_cohort1.vcf", with << -s _ >> the sample name will be "sample1"; special regex characters cannot be used alone (eg ? or .) 
 #-b = encode blacklist 
 #-r = genomic regions of interest in bed format; should have 4 columns:chr,start,end,name(for example sample name but can be anything)
@@ -17,13 +20,13 @@ while getopts o:v:s:b:r:a:m: option
 do
         case "${option}"
         in
-                o) OUTDIR=${OPTARG};;
-                v) VCFDIR=${OPTARG};;
-				s) MYSEP=${OPTARG};;
-                b) BLACKLIST=${OPTARG};;
-                r) REGIONS=${OPTARG};;
-				a) ANNO=${OPTARG};;
-				m) METHOD=${OPTARG};;	
+        o) OUTDIR=${OPTARG};;
+        v) VCFDIR=${OPTARG};;
+		s) MYSEP=${OPTARG};;
+        b) BLACKLIST=${OPTARG};;
+        r) REGIONS=${OPTARG};;
+		a) ANNO=${OPTARG};;
+		m) METHOD=${OPTARG};;	
         esac
 done
 
@@ -94,4 +97,4 @@ rm $OUTDIR/tmpfile.txt
 mapBed -c 4 -o distinct -null "DistalRE" -a $REGIONS -b $ANNO > $OUTDIR/annotated_regions.txt
 
 #Run hotspot analysis
-Rscript /mnt/work1/users/lupiengroup/CommonScripts/SMURF/smurf_v2.r "$OUTDIR" "$METHOD"
+Rscript /mnt/work1/users/lupiengroup/CommonScripts/SMURF/smurf.r "$OUTDIR" "$METHOD"
