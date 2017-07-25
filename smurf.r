@@ -14,8 +14,8 @@ library(GenomicRanges)
 `%ni%` <- Negate(`%in%`) 
 
 #full VCF file containing all somatic variants
-df<-read.delim("fullVCF.txt",sep="\t",header=F,stringsAsFactors = FALSE)
-names(df)<-c("chr","start","end","samples","MutSamples","CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO","FORMAT")
+df<-read.delim("FiltVarsInPeaks.txt",sep="\t",header=F,stringsAsFactors = FALSE)
+names(df)<-c("chr","start","end","samples","MutSamples","chr_mut","pos_mut")
 
 #peaks file containing the coordinates of the regions of interest and their annotation to a gene if promoter (based on gencode) or as DistalRE
 peaks<-read.delim("annotated_regions.txt",sep="\t",header=F,stringsAsFactors=FALSE)
