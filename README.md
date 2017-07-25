@@ -7,10 +7,10 @@ Developed by Paul Guilhamon
 
 # Installation
 
-Clone this tool via
-
-```shell
-git clone git@github.com:LupienLabOrganization/SMURF.git
-```
+Clone this repo via `git clone`.
 
 The SNP147 annotation files from the [UCSC Table Browser](https://genome.ucsc.edu/cgi-bin/hgTables) are very large, so they are not included in this repository.
+
+# Usage
+
+`sh smurf.sh`
