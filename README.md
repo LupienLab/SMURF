@@ -60,3 +60,33 @@ qsub smurf.sh \
   * SNPs: dbSNP sets v147 were downloaded from the UCSC table browser for each genome build. Two versions of the databases are available, "All" to filter out all known SNPs and "Common" to remove only those that have a minor allele frequency of >= 1%. This latter set might be of use if one wants to avoid removing potentially interesting somatic mutations that also appear as very rare polymorphisms in the population.
 
 ## Output
+
+SMURF outputs a number of files, some for display and evaluation purposes, others as end results, and a final set for input into downstream tools, such as [C3D](https://github.com/LupienLabOrganization/C3D) or [GO](http://www.geneontology.org) annotation.
+
+### Results Files
+
+| File | Description |
+|------|-------------|
+| filtered vcf files | VCF files will be filtered for SNPs and blacklist regions a specified by the user |
+|`FiltVarsInPeaks.txt` | Concatenated list of unique variants, overlapped with the input genomic regions, and including the names of samples they were identified in |
+| `summary.txt` | Summary of the number of input regions,number mutated, number mutated significantly, and their distribution in promoter and enhancer regions |
+| `annotated_regions.txt` | All input genomic regions annotated to either a promoter region (using Gencode as described above) OR to "DistalRE" (=distal regulatory element) if they fall outside promoter regions |
+| `named_counts.txt` | Count of unique variants in each sample |
+| `Mutated_Regions.txt` and other files with that prefix | All information on the mutated regions and stats on significance of mutation. Other files include suffixes indicating the subsequent filtering steps. `Freq3`: only includes regions with >=3 mutations from >= 3 different samples. `qval0.05`: only includes regions significantly mutated |
+
+### Results Plots
+
+| File | Description |
+|------|-------------|
+| `QQplot_Freq3.pdf` | self-explanatory |
+| `barplot_mut_inRegions_Counts_and_Perc.pdf` | summary plots of the number of variants per sample and how many overlap with the provided genomic intervals |
+| `Mutated_Regions_Freq3_qval0.05.pdf` | scatter plot of significantly mutated regions |
+| `Mutated_Regions_Freq3_qval0.05_Promoters_VS_DistalREs.pdf` | same as above with added promoter/DistalRE annotation |
+
+### Files for use in dowstream analyses
+
+| File | Description |
+|------|-------------|
+| `Mutated_Regions_sigmut0.05_DistalRE_forc3d.bed` | significantly mutated regions annotated to enhancers, to use as input for C3D to identify downstream target promoters |
+| `Mutated_Regions_sigmut0.05_DistalReAndProm.bed` | all significantly mutated regions; for use in GO applications for example, or TF motif enrichment |
+| `Mutated_Regions_allmut_DistalREAndProm.bed` | all mutated regions |
