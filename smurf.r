@@ -1,3 +1,31 @@
+
+#This file is part of SMuRF
+
+#Copyright 2017 Paul Guilhamon
+
+# SMuRF is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# SMuRF is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details <http://www.gnu.org/licenses/>.
+
+
+
+#######################################################
+# Written by: Paul Guilhamon
+# Princess Margaret Cancer Centre - University Health Network, November 2017
+#######################################################
+
+
+
+
+
+
+
 args <- commandArgs(trailingOnly = TRUE)
 resdir <- as.character(args[1])
 setwd(resdir)
@@ -5,11 +33,14 @@ setwd(resdir)
 method<-as.character(args[2])
 
 ####LOAD IN FILES & PACKAGES####
-library(gtools)
-library(gplots)
-library(data.table)
-library(psych)
-library(GenomicRanges)
+suppressMessages(library(gtools))
+suppressMessages(library(gplots))
+suppressMessages(library(data.table))
+suppressMessages(library(psych))
+suppressMessages(library(GenomicRanges))
+suppressMessages(library(ggplot2))
+suppressMessages(library(dplyr))
+
 
 `%ni%` <- Negate(`%in%`) 
 
@@ -58,8 +89,8 @@ peaks.counts<-as.data.frame(table(df$peakID),stringsAsFactors=F)
 names(peaks.counts)<-c("peakID","Freq")
 peaks.counts<-peaks.counts[order(peaks.counts$Freq,decreasing=T),]
 
-#calculate global background mutation rate
-bmr.global<-sum(mutatedsamples.counts$tot.mut.inRegions)/sum(peaks$lengths) 
+#calculate allsamples background mutation rate
+bmr.allsamples<-sum(mutatedsamples.counts$tot.mut.inRegions)/sum(peaks$lengths) 
 
 #calculate sample-specific background mutation rate
 mutatedsamples.counts<-transform(mutatedsamples.counts,bmr.sample=tot.mut.inRegions/sum(peaks$lengths))
@@ -69,7 +100,7 @@ mutatedsamples.counts<-transform(mutatedsamples.counts,bmr.sample=tot.mut.inRegi
 
 # x	number of successes, or a vector of length 2 giving the numbers of successes and failures, respectively = FreqUnique
 # n	number of trials =peakLEN
-# p	hypothesized probability of success =bmr.global or bmr.peak
+# p	hypothesized probability of success =bmr.allsamples or bmr.regionsamples
 # alternative	indicates the alternative hypothesis and must be one of "two.sided", "greater" or "less". You can specify just the initial letter.: "greater"
 # conf.level confidence level for the returned confidence interval:0.95
 
@@ -86,7 +117,7 @@ myd<-transform(peaks.counts,
 
 for (i in 1:nrow(myd)){
   s.in.peak<-df[which(df[,"peakID"]==myd[i,"peakID"]),"MutSamples"] #which MutSamples samples have mutations in that region
-  bmr.peak<-mean(mutatedsamples.counts[which(mutatedsamples.counts[,"MutSamples"] %in% s.in.peak),"bmr.sample"]) #average of the mutation rates of the samples with a mutation in that peak
+  bmr.regionsamples<-mean(mutatedsamples.counts[which(mutatedsamples.counts[,"MutSamples"] %in% s.in.peak),"bmr.sample"]) #average of the mutation rates of the samples with a mutation in that peak
   myd$FreqUnique[i]<-length(unique(s.in.peak)) #the number of unique mutated samples in the peak
   myd$peakLEN[i]<-peaks[which(peaks[,"peakID"]==myd[i,"peakID"]),"lengths"]
   myd$peakANNO[i]<-peaks[which(peaks[,"peakID"]==myd[i,"peakID"]),"annotation"]
@@ -95,9 +126,9 @@ for (i in 1:nrow(myd)){
   myd$end[i]<-df[which(df[,"peakID"]==myd[i,"peakID"])[1],"end"]
   myd$MutSamples[i]<-as.character(paste(s.in.peak,collapse=",")) 
   myd$MutSamplesunique[i]<-as.character(paste(unique(s.in.peak),collapse=",")) #the list of unique MutSamples samples with muts in this region
-  myd$peakMUTr[i]<-myd[i,"Freq"]/myd[i,"peakLEN"]
-  if (method=="global") {myd$pbin[i]<-binom.test(x=myd$FreqUnique[i],n=myd$peakLEN[i],p=bmr.global,alternative="greater")$p.value}
-  if (method=="peak") {myd$pbin[i]<-binom.test(x=myd$FreqUnique[i],n=myd$peakLEN[i],p=bmr.peak,alternative="greater")$p.value}	  
+  myd$peakMUTr[i]<-myd[i,"FreqUnique"]/myd[i,"peakLEN"]
+  if (method=="allsamples") {myd$pbin[i]<-binom.test(x=myd$FreqUnique[i],n=myd$peakLEN[i],p=bmr.allsamples,alternative="greater")$p.value}
+  if (method=="regionsamples") {myd$pbin[i]<-binom.test(x=myd$FreqUnique[i],n=myd$peakLEN[i],p=bmr.regionsamples,alternative="greater")$p.value}	  
 }
 
 
@@ -145,20 +176,22 @@ forc3d<-myd0.05[which(myd0.05$peakANNO == "DistalRE"),6:8]
 write.table(forc3d,"Mutated_Regions_Freq3_qval0.05_DistalRE.bed",sep="\t",col.names=F,row.names=F,quote=F)
 
 
+
+#####PLOT ADJUSTED P-VALUE vs REGION MUTATION RATE#####
 #plot in black and white the peaks pvalue vs mutation rate
 if (nrow(myd0.05)>0) {
-	pdf("Mutated_Regions_Freq3_qval0.05.pdf",height=8,width=12)
+	pdf("Mutation_Rate_Plot_Freq3_qval0.05.pdf",height=8,width=12)
 	mymax<-ceiling(max(myd0.05$neglog10qval)/10)*10
 	plot(myd0.05$peakMUTr,myd0.05$neglog10qval,ylab="-log10(Qvalue)",xlab="Region Mutation Rate",ylim=c(0,mymax),pch=16,lwd=3)
 	dev.off()
 }
 
-#Plot
+#Plot in colour, separating promoters and Distal REs
 if (nrow(myd0.05)>0) {
 	myd0.052<-transform(myd0.05, colour = rep("palevioletred",nrow(myd0.05)),stringsAsFactors=FALSE)
 	myd0.052$colour[which(myd0.052$peakANNO == "DistalRE")]<-"lightblue3"
 
-	pdf("Mutated_Regions_Freq3_qval0.05_Promoters_VS_DistalREs.pdf",height=8,width=12)
+	pdf("Mutation_Rate_Plot_Freq3_qval0.05_Promoters_VS_DistalREs.pdf",height=8,width=12)
 	numEnh<-nrow(myd0.052[which(myd0.052$peakANNO == "DistalRE"),])
 	numProm<-nrow(myd0.052[which(myd0.052$peakANNO != "DistalRE"),])
 	mymax<-ceiling(max(myd0.052$neglog10qval)/10)*10
@@ -166,3 +199,136 @@ if (nrow(myd0.05)>0) {
 	legend(x="topleft", legend = c(paste("Promoter (",numProm,")",sep=""),paste("Distal RE (",numEnh,")",sep="")), col=c("palevioletred","lightblue3"), pch=19, 	cex=1.2, bty="n", pt.cex=1.2,y.intersp=1.4)
 	dev.off()
 }
+
+#####PLOT ADJUSTED P-VALUE vs FREQUENCY OF UNIQUE SAMPLES MUTATED IN REGION#####
+
+#in black and white qvalue vs Mutation frequency
+data <- myd3 %>%
+  mutate(color = ifelse(myd3$pbin.adj < 0.05, 
+                        yes = "SIG", 
+                        no = "NOTSIG"))
+colored <- ggplot(data, aes(x = FreqUnique, y = neglog10qval)) + 
+  geom_point(aes(color = factor(color)), size = 1.75, alpha = 0.8, na.rm = T) + # add gene points
+  theme_bw(base_size = 16) + # clean up theme
+  theme(legend.position="none") + # remove legend 
+  ggtitle(label = "") +  # add title
+  xlab(expression("Samples Mutated in Region")) + # x-axis label
+  ylab(expression(-log[10]("q-value"))) + # y-axis label
+  geom_vline(xintercept = 2, colour = "black") + # add line at 0
+  geom_hline(yintercept = 1.3, colour = "black") + # p(0.05) = 1.3
+  scale_color_manual(values = c("SIG" = "#000000",
+                                "NOTSIG" = "#d9d9d9")) # change colors
+
+
+
+if (nrow(myd0.05)>0) {
+  pdf("Sample_Frequency_Plot_Freq3_qval0.05.pdf",height=8,width=6)
+  mymax<-ceiling(max(data$neglog10qval)/10)*10
+  mymaxx<-max(data$FreqUnique)
+  bwplot<-colored + scale_y_continuous(trans = "log1p",breaks=c(seq(0,10,2),seq(0,mymax,10))) + scale_x_continuous(breaks=c(2,seq(10,mymaxx,10)))
+  print(bwplot)
+  dev.off()
+}
+
+
+
+#in colours qvalue vs Mutation frequency, with distalREs and Promoters
+numEnh<-nrow(myd3[which(myd3$pbin.adj < 0.05 & myd3$peakANNO=="DistalRE"),])
+numProm<-nrow(myd3[which(myd3$pbin.adj < 0.05 & myd3$peakANNO!="DistalRE"),])
+
+data <- myd3 %>%
+  mutate(color = ifelse(myd3$pbin.adj < 0.05 & myd3$peakANNO!="DistalRE", 
+                        yes = "Promoter",
+                        no = ifelse(myd3$pbin.adj < 0.05 & myd3$peakANNO=="DistalRE", 
+                                    yes = "DistalRE",
+                                    no = "NOTSIG")))
+
+colored <- ggplot(data, aes(x = FreqUnique, y = neglog10qval)) + 
+  geom_point(aes(color = factor(color)), size = 1.75, alpha = 0.8, na.rm = T) + # add gene points
+  theme_bw(base_size = 16) + # clean up theme
+  theme(legend.position="bottom",legend.title = element_blank(),legend.key = element_rect(colour = NA)) +
+  ggtitle(label = "") +  # add title
+  xlab(expression("Samples Mutated in Region")) + # x-axis label
+  ylab(expression(-log[10]("q-value"))) + # y-axis label
+  geom_vline(xintercept = 2, colour = "black") + # add line at 0
+  geom_hline(yintercept = 1.3, colour = "black") + # p(0.05) = 1.3
+  scale_color_manual(values = c("DistalRE"="lightblue3","NOTSIG"="#d9d9d9","Promoter"="palevioletred"),
+                     labels=c("DistalRE"=paste0("Distal RE (",numEnh,")"),"NOTSIG"="Not Significant","Promoter"=paste0("Promoter (",numProm,")")))
+
+if (nrow(myd0.05)>0) {
+  pdf("Sample_Frequency_Plot_Freq3_qval0.05_Promoters_VS_DistalREs.pdf",height=8,width=6)
+  mymax<-ceiling(max(data$neglog10qval)/10)*10
+  mymaxx<-max(data$FreqUnique)
+  colplot<-colored + scale_y_continuous(trans = "log1p",breaks=c(seq(0,10,2),seq(0,mymax,10))) + scale_x_continuous(breaks=c(2,seq(10,mymaxx,10)))
+  print(colplot)
+  dev.off()
+}
+
+
+
+#Plot of promoters and DistalREs separately
+##DistalREs
+numEnh<-nrow(myd3[which(myd3$pbin.adj < 0.05 & myd3$peakANNO=="DistalRE"),])
+numProm<-nrow(myd3[which(myd3$pbin.adj < 0.05 & myd3$peakANNO!="DistalRE"),])
+
+data <- myd3 %>%
+  mutate(color = ifelse(myd3$pbin.adj < 0.05 & myd3$peakANNO!="DistalRE", 
+                        yes = "Promoter",
+                        no = ifelse(myd3$pbin.adj < 0.05 & myd3$peakANNO=="DistalRE", 
+                                    yes = "DistalRE",
+                                    no = "NOTSIG")))
+data<-data[which(data$peakANNO=="DistalRE"),]
+colored <- ggplot(data, aes(x = FreqUnique, y = neglog10qval)) + 
+  geom_point(aes(color = factor(color)), size = 1.75, alpha = 0.8, na.rm = T) + # add gene points
+  theme_bw(base_size = 16) + # clean up theme
+  theme(legend.position="bottom",legend.title = element_blank(),legend.key = element_rect(colour = NA)) +
+  ggtitle(label = "") +  # add title
+  xlab(expression("Samples Mutated in Region")) + # x-axis label
+  ylab(expression(-log[10]("q-value"))) + # y-axis label
+  geom_vline(xintercept = 2, colour = "black") + # add line at 0
+  geom_hline(yintercept = 1.3, colour = "black") + # p(0.05) = 1.3
+  scale_color_manual(values = c("DistalRE"="lightblue3","NOTSIG"="#d9d9d9","Promoter"="palevioletred"),
+                     labels=c("DistalRE"=paste0("Distal RE (",numEnh,")"),"NOTSIG"="Not Significant","Promoter"=paste0("Promoter (",numProm,")")))
+
+if (nrow(myd0.05)>0) {
+  pdf("Sample_Frequency_Plot_Freq3_qval0.05_DistalREs.pdf",height=8,width=6)
+  mymax<-ceiling(max(data$neglog10qval)/10)*10
+  mymaxx<-max(data$FreqUnique)
+  colplot<-colored + scale_y_continuous(trans = "log1p",breaks=c(seq(0,10,2),seq(0,mymax,10))) + scale_x_continuous(breaks=c(2,seq(10,mymaxx,10)))
+  print(colplot)
+  dev.off()
+}
+
+
+
+
+##Promoters
+
+data <- myd3 %>%
+  mutate(color = ifelse(myd3$pbin.adj < 0.05 & myd3$peakANNO!="DistalRE", 
+                        yes = "Promoter",
+                        no = ifelse(myd3$pbin.adj < 0.05 & myd3$peakANNO=="DistalRE", 
+                                    yes = "DistalRE",
+                                    no = "NOTSIG")))
+data<-data[which(data$peakANNO!="DistalRE"),]
+colored <- ggplot(data, aes(x = FreqUnique, y = neglog10qval)) + 
+  geom_point(aes(color = factor(color)), size = 1.75, alpha = 0.8, na.rm = T) + # add gene points
+  theme_bw(base_size = 16) + # clean up theme
+  theme(legend.position="bottom",legend.title = element_blank(),legend.key = element_rect(colour = NA)) +
+  ggtitle(label = "") +  # add title
+  xlab(expression("Samples Mutated in Region")) + # x-axis label
+  ylab(expression(-log[10]("q-value"))) + # y-axis label
+  geom_vline(xintercept = 2, colour = "black") + # add line at 0
+  geom_hline(yintercept = 1.3, colour = "black") + # p(0.05) = 1.3
+  scale_color_manual(values = c("DistalRE"="lightblue3","NOTSIG"="#d9d9d9","Promoter"="palevioletred"),
+                     labels=c("DistalRE"=paste0("Distal RE (",numEnh,")"),"NOTSIG"="Not Significant","Promoter"=paste0("Promoter (",numProm,")")))
+
+if (nrow(myd0.05)>0) {
+  pdf("Sample_Frequency_Plot_Freq3_qval0.05_Promoters.pdf",height=8,width=6)
+  mymax<-ceiling(max(data$neglog10qval)/10)*10
+  mymaxx<-max(data$FreqUnique)
+  colplot<-colored + scale_y_continuous(trans = "log1p",breaks=c(seq(0,10,2),seq(0,mymax,10))) + scale_x_continuous(breaks=c(2,seq(10,mymaxx,10)))
+  print(colplot)
+  dev.off()
+}
+
