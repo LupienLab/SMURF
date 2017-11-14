@@ -151,8 +151,18 @@ write.table(myd0.05[,6:8],"Mutated_Regions_Freq3_qval0.05_DistalREAndProm.bed",s
 
 #Make QQplot
 pdf("QQplot_Freq3.pdf",height=6,width=9)
-qqnorm(-log10(myd3$pbin),main="QQplot",pch=16)
-qqline(-log10(myd3$pbin),col="red")
+qqplot(
+  qunif(ppoints(length(myd$pbin))),
+  myd$pbin,
+  main = "Q-Q Plot",
+  xlab = "Theoretical Quantiles",
+  ylab = "p-value"
+)
+qqline(
+  myd$pbin,
+  distribution = qunif,
+  col="red"
+)
 dev.off()
 
 #Write to file some summary stats:
