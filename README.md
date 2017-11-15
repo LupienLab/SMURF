@@ -32,9 +32,9 @@ qsub smurf.sh \
 -f [vcf|bam] \
 -v VARPATH \
 -g [hg19|hg38] \
--s [n|c|a|o] \
+-s [n|PATH] \
 -r REGIONS \
--m [global|peak]
+-m [allsamples|regionsamples]
 ```
 
 ## Arguments
