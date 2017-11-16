@@ -59,7 +59,7 @@ mkdir -p "$OUTDIR"
 
 if [ "$FORMAT" = "vcf" ]
 then
-    echo Your have chosen to input vcf files
+    echo "You have chosen to input vcf files"
     num_samples=$(ls $VARIANTS/*vcf | wc -l)
 
     # Create list of files
@@ -95,7 +95,10 @@ then
         done
     fi
 
+    # clean up temporary files
     rm "$OUTDIR/tmp.vcf"
+    rm "$OUTDIR/vcfheader.tmp" "$OUTDIR/vcfbody.tmp" "$OUTDIR/vcfbody2.tmp"
+
     # Create list of VCF files with full path
     ls -d1 $OUTDIR/*vcf > "$OUTDIR/filt_files_full_path.txt"
     # Concatenate file paths into one string to use in bedintersect command
@@ -113,8 +116,8 @@ then
     #Make concatenated VCF file intersected with regions of interest
     bedtools intersect -wa -wb \
         -a "$REGIONS" \
-        -b "$myfiles" \
-        -names "$mynames" | cut -f 1-7 > "$OUTDIR/FiltVarsInPeaks.txt"
+        -b $myfiles \
+        -names $mynames | cut -f 1-7 > "$OUTDIR/FiltVarsInPeaks.txt"
  
     #create list of VCF sample names with number of variants in each
     touch "$OUTDIR/counts_tmp.txt"

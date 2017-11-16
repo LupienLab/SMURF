@@ -30,7 +30,7 @@ args <- commandArgs(trailingOnly = TRUE)
 resdir <- as.character(args[1])
 setwd(resdir)
 
-method<-as.character(args[2])
+method <- as.character(args[2])
 
 ####LOAD IN FILES & PACKAGES####
 suppressMessages(library(gtools))
@@ -42,29 +42,64 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(dplyr))
 
 
-`%ni%` <- Negate(`%in%`) 
+`%ni%` <- Negate(`%in%`)
 
 #full VCF file containing all somatic variants
-df<-read.delim("FiltVarsInPeaks.txt",sep="\t",header=F,stringsAsFactors = FALSE)
-names(df)<-c("chr","start","end","samples","MutSamples","chr_mut","pos_mut")
+df <- read.delim(
+  "FiltVarsInPeaks.txt",
+  sep = "\t",
+  header = FALSE,
+  stringsAsFactors = FALSE
+)
+names(df) <- c(
+  "chr",
+  "start",
+  "end",
+  "samples",
+  "MutSamples",
+  "chr_mut",
+  "pos_mut"
+)
 
 #peaks file containing the coordinates of the regions of interest and their annotation to a gene if promoter (based on gencode) or as DistalRE
-peaks<-read.delim("annotated_regions.txt",sep="\t",header=F,stringsAsFactors=FALSE)
-names(peaks)<-c("chr","start","end","samples","annotation")
+peaks <- read.delim(
+  "annotated_regions.txt",
+  sep = "\t",
+  header = FALSE,
+  stringsAsFactors = FALSE
+)
+names(peaks) <- c(
+  "chr",
+  "start",
+  "end",
+  "samples",
+  "annotation"
+)
 
 #number of SNV in each sample
-mutatedsamples.counts<-read.delim("named_counts.txt",sep="\t",header=F,stringsAsFactors=FALSE)
-names(mutatedsamples.counts)<-c("MutSamples","tot.mut")
+mutatedsamples.counts <- read.delim(
+  "named_counts.txt",
+  sep = "\t",
+  header = FALSE,
+  stringsAsFactors = FALSE
+)
+names(mutatedsamples.counts) <- c("MutSamples", "tot.mut")
 
 ####CALCULATE REQUIRED INFO FOR BINOMIAL TEST####
 
 #add in number of muts per sample over the genomic regions
-mutatedsamples.counts<-transform(mutatedsamples.counts,tot.mut.inRegions=rep(0,nrow(mutatedsamples.counts)))
+mutatedsamples.counts <- transform(
+  mutatedsamples.counts,
+  tot.mut.inRegions = rep(0, nrow(mutatedsamples.counts))
+)
 for (i in 1:nrow(mutatedsamples.counts)){
-  mutatedsamples.counts[i,3]<-nrow(df[which(df$MutSamples==mutatedsamples.counts[i,1]),])
+  mutatedsamples.counts[i, 3] <- nrow(df[which(df$MutSamples == mutatedsamples.counts[i, 1]), ])
 }
 
-mutatedsamples.counts<-transform(mutatedsamples.counts,perc.mut.inRegions=100*(tot.mut.inRegions/tot.mut))
+mutatedsamples.counts <- transform(
+  mutatedsamples.counts,
+  perc.mut.inRegions = 100 * (tot.mut.inRegions/tot.mut)
+)
 
 pdf("barplot_mut_inRegions_Counts_and_Perc.pdf",height=6,width=9)
 par(mar=c(8, 4, 4, 2))
@@ -104,20 +139,31 @@ mutatedsamples.counts<-transform(mutatedsamples.counts,bmr.sample=tot.mut.inRegi
 # alternative	indicates the alternative hypothesis and must be one of "two.sided", "greater" or "less". You can specify just the initial letter.: "greater"
 # conf.level confidence level for the returned confidence interval:0.95
 
-myd<-transform(peaks.counts,
-               FreqUnique=rep(0,nrow(peaks.counts)),
-               peakLEN=rep(0,nrow(peaks.counts)),
-               peakANNO=rep("bla",nrow(peaks.counts)),
-               chr=rep("chr",nrow(peaks.counts)),start=rep(0,nrow(peaks.counts)),end=rep(0,nrow(peaks.counts)),
-               MutSamples=rep("bla",nrow(peaks.counts)),
-               MutSamplesunique=rep("bla",nrow(peaks.counts)),
-               peakMUTr=rep(0,nrow(peaks.counts)),
-               pbin=rep(0,nrow(peaks.counts)),stringsAsFactors = FALSE)
+myd<-transform(
+  peaks.counts,
+  FreqUnique = rep(0, nrow(peaks.counts)),
+  peakLEN = rep(0, nrow(peaks.counts)),
+  peakANNO = rep("bla", nrow(peaks.counts)),
+  chr = rep("chr", nrow(peaks.counts)),
+  start = rep(0, nrow(peaks.counts)),
+  end = rep(0, nrow(peaks.counts)),
+  MutSamples = rep("bla", nrow(peaks.counts)),
+  MutSamplesunique = rep("bla", nrow(peaks.counts)),
+  peakMUTr = rep(0, nrow(peaks.counts)),
+  pbin = rep(0, nrow(peaks.counts)),
+  stringsAsFactors = FALSE
+)
 
 
 for (i in 1:nrow(myd)){
-  s.in.peak<-df[which(df[,"peakID"]==myd[i,"peakID"]),"MutSamples"] #which MutSamples samples have mutations in that region
-  bmr.regionsamples<-mean(mutatedsamples.counts[which(mutatedsamples.counts[,"MutSamples"] %in% s.in.peak),"bmr.sample"]) #average of the mutation rates of the samples with a mutation in that peak
+  #which MutSamples samples have mutations in that region
+  s.in.peak <- df[which(df[, "peakID"] == myd[i, "peakID"]), "MutSamples"]
+  #average of the mutation rates of the samples with a mutation in that peak
+  bmr.regionsamples <- mean(
+    mutatedsamples.counts[
+      which(mutatedsamples.counts[, "MutSamples"] %in% s.in.peak),
+      "bmr.sample"
+  ]) 
   myd$FreqUnique[i]<-length(unique(s.in.peak)) #the number of unique mutated samples in the peak
   myd$peakLEN[i]<-peaks[which(peaks[,"peakID"]==myd[i,"peakID"]),"lengths"]
   myd$peakANNO[i]<-peaks[which(peaks[,"peakID"]==myd[i,"peakID"]),"annotation"]
@@ -231,11 +277,22 @@ colored <- ggplot(data, aes(x = FreqUnique, y = neglog10qval)) +
 
 
 
-if (nrow(myd0.05)>0) {
-  pdf("Sample_Frequency_Plot_Freq3_qval0.05.pdf",height=8,width=6)
-  mymax<-ceiling(max(data$neglog10qval)/10)*10
-  mymaxx<-max(data$FreqUnique)
-  bwplot<-colored + scale_y_continuous(trans = "log1p",breaks=c(seq(0,10,2),seq(0,mymax,10))) + scale_x_continuous(breaks=c(2,seq(10,mymaxx,10)))
+if (nrow(myd0.05) > 0) {
+  pdf(
+    "Sample_Frequency_Plot_Freq3_qval0.05.pdf",
+    height = 8,
+    width = 6
+  )
+  mymax <- ceiling(max(data$neglog10qval) / 10) * 10
+  mymaxx <- max(data$FreqUnique)
+  bwplot <- (
+    colored
+    + scale_y_continuous(
+      trans = "log1p",
+      breaks = c(seq(0, 10, 2), seq(0, mymax, 10))
+    )
+    + scale_x_continuous(breaks = c(2, seq(10, mymaxx, 10)))
+  )
   print(bwplot)
   dev.off()
 }
@@ -265,11 +322,22 @@ colored <- ggplot(data, aes(x = FreqUnique, y = neglog10qval)) +
   scale_color_manual(values = c("DistalRE"="lightblue3","NOTSIG"="#d9d9d9","Promoter"="palevioletred"),
                      labels=c("DistalRE"=paste0("Distal RE (",numEnh,")"),"NOTSIG"="Not Significant","Promoter"=paste0("Promoter (",numProm,")")))
 
-if (nrow(myd0.05)>0) {
-  pdf("Sample_Frequency_Plot_Freq3_qval0.05_Promoters_VS_DistalREs.pdf",height=8,width=6)
-  mymax<-ceiling(max(data$neglog10qval)/10)*10
-  mymaxx<-max(data$FreqUnique)
-  colplot<-colored + scale_y_continuous(trans = "log1p",breaks=c(seq(0,10,2),seq(0,mymax,10))) + scale_x_continuous(breaks=c(2,seq(10,mymaxx,10)))
+if (nrow(myd0.05) > 0) {
+  pdf(
+    "Sample_Frequency_Plot_Freq3_qval0.05_Promoters_VS_DistalREs.pdf",
+    height = 8,
+    width=6
+  )
+  mymax <- ceiling(max(data$neglog10qval) / 10) * 10
+  mymaxx <- max(data$FreqUnique)
+  colplot <- (
+    colored
+    + scale_y_continuous(
+      trans = "log1p",
+      breaks = c(seq(0, 10, 2), seq(0, mymax, 10))
+    )
+    + scale_x_continuous(breaks = c(2, seq(10, mymaxx, 10)))
+  )
   print(colplot)
   dev.off()
 }
@@ -300,11 +368,22 @@ colored <- ggplot(data, aes(x = FreqUnique, y = neglog10qval)) +
   scale_color_manual(values = c("DistalRE"="lightblue3","NOTSIG"="#d9d9d9","Promoter"="palevioletred"),
                      labels=c("DistalRE"=paste0("Distal RE (",numEnh,")"),"NOTSIG"="Not Significant","Promoter"=paste0("Promoter (",numProm,")")))
 
-if (nrow(myd0.05)>0) {
-  pdf("Sample_Frequency_Plot_Freq3_qval0.05_DistalREs.pdf",height=8,width=6)
-  mymax<-ceiling(max(data$neglog10qval)/10)*10
-  mymaxx<-max(data$FreqUnique)
-  colplot<-colored + scale_y_continuous(trans = "log1p",breaks=c(seq(0,10,2),seq(0,mymax,10))) + scale_x_continuous(breaks=c(2,seq(10,mymaxx,10)))
+if (nrow(myd0.05) > 0) {
+  pdf(
+    "Sample_Frequency_Plot_Freq3_qval0.05_DistalREs.pdf",
+    height = 8,
+    width = 6
+  )
+  mymax <- ceiling(max(data$neglog10qval) / 10) * 10
+  mymaxx <- max(data$FreqUnique)
+  colplot <- (
+    colored
+    + scale_y_continuous(
+      trans = "log1p",
+      breaks = c(seq(0, 10, 2), seq(0, mymax, 10))
+    )
+    + scale_x_continuous(breaks = c(2, seq(10, mymaxx, 10)))
+  )
   print(colplot)
   dev.off()
 }
@@ -333,11 +412,22 @@ colored <- ggplot(data, aes(x = FreqUnique, y = neglog10qval)) +
   scale_color_manual(values = c("DistalRE"="lightblue3","NOTSIG"="#d9d9d9","Promoter"="palevioletred"),
                      labels=c("DistalRE"=paste0("Distal RE (",numEnh,")"),"NOTSIG"="Not Significant","Promoter"=paste0("Promoter (",numProm,")")))
 
-if (nrow(myd0.05)>0) {
-  pdf("Sample_Frequency_Plot_Freq3_qval0.05_Promoters.pdf",height=8,width=6)
-  mymax<-ceiling(max(data$neglog10qval)/10)*10
-  mymaxx<-max(data$FreqUnique)
-  colplot<-colored + scale_y_continuous(trans = "log1p",breaks=c(seq(0,10,2),seq(0,mymax,10))) + scale_x_continuous(breaks=c(2,seq(10,mymaxx,10)))
+if (nrow(myd0.05) > 0) {
+  pdf(
+    "Sample_Frequency_Plot_Freq3_qval0.05_Promoters.pdf",
+    height = 8,
+    width = 6
+  )
+  mymax <- ceiling(max(data$neglog10qval) / 10) * 10
+  mymaxx <- max(data$FreqUnique)
+  colplot <- (
+    colored
+    + scale_y_continuous(
+      trans = "log1p",
+      breaks = c(seq(0, 10, 2), seq(0, mymax, 10))
+    )
+    # + scale_x_continuous(breaks = c(2, seq(10, mymaxx, 10)))
+  )
   print(colplot)
   dev.off()
 }
