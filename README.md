@@ -1,7 +1,7 @@
-# SMURF
+# SMuRF
 **S**ignificantly **Mu**tated **R**egion **F**inder
 
-SMURF identifies significantly mutated genomic regions in a set of samples.
+SMuRF identifies significantly mutated genomic regions in a set of samples.
 
 Developed by Paul Guilhamon
 
@@ -9,7 +9,9 @@ Developed by Paul Guilhamon
 
 Clone this repo via `git clone`.
 
-The SNP147 annotation files from the [UCSC Table Browser](https://genome.ucsc.edu/cgi-bin/hgTables) are very large, so they are not included in this repository.
+SMuRF can make use of Common SNP database files, if desired.
+These database files are very large, so they are not included in this repository.
+But, they can be downloaded from the [UCSC Table Browser](https://genome.ucsc.edu/cgi-bin/hgTables) by selecting **Group:** Variation, selecting the desired **Track**, and saving in BED format.
 
 ## Requirements
 
@@ -27,14 +29,14 @@ It requires the following R packages:
 # Usage
 
 ```shell
-qsub smurf.sh \
+sh smurf.sh \
 -o OUTDIR \
--f [vcf|bam] \
+-f <vcf | bam> \
 -v VARPATH \
--g [hg19|hg38] \
--s [n|PATH] \
+-s <n | PATH> \
+-p PROMPATH \
 -r REGIONS \
--m [allsamples|regionsamples]
+-m <allsamples | regionsamples>
 ```
 
 ## Arguments
@@ -42,12 +44,12 @@ qsub smurf.sh \
 | Parameter | Description |
 |-----------|-------------|
 | `-o` | Output directory (absolute path) |
-| `-f [vcf\|bam]` | Format chosen for input variants. **vcf**: individual VCF formatted files for each sample must be placed under a single directory. The full path to that directory is what should be supplied to the `-v` argument described below. **NOTE**: when using this option the sample names used for output files will be automatically generated from the names of the VCF files themselves: if the filename contains an underscore, then the sample name will be everything that comes before the underscore; otherwise the `.vcf` at the end of the filename will be clipped off and the rest will be used as as sample name. Do make sure your sample names do not become identical once the portion of the filename after the underscore is removed. **bed**: a single BED file containing all variants to be analysed. The format must be the following: `chr start stop name`. The full path to that bed file is what should be supplied to the `-v` argument described below. |
+| `-f <vcf \| bam>` | Format chosen for input variants. **vcf**: individual VCF formatted files for each sample must be placed under a single directory. The full path to that directory is what should be supplied to the `-v` argument described below. **NOTE**: when using this option the sample names used for output files will be automatically generated from the names of the VCF files themselves. The `.vcf` at the end of the filename will be clipped off and the rest will be used as sample name. **bed**: a single BED file containing all variants to be analysed. The format must be the following: `chr start stop name`. The full path to that BED file is what should be supplied to the `-v` argument described below. |
 | `-v` | The input variants themselves; depending on the format chosen above, either the path to a directory containing individual VCF files OR the path to a single BED file. |
-| `-s` | SNP filter to apply to the input variants. Must be either "n" (no SNP filter), or the full path to a SNP file of your choice that will be filtered out of your input variants file. Files for common and all snps from dbSNP147 for the hg19 and hg38 human genome builds are available in the SMuRF directory for convenience. |
-| `-p` | Promoter annotation file; those derived from Gencodev19 (human genome build hg19) and Gencodev24 (human genome build hg38) are provided in the SMuRF directory. These can be replaced with any annotation of your choice, but the output figures by SMuRF will automatically colour-code regions by either the gene name linked to a promoter region or the mention "DistalRE" for distal regulatory element, as this tool was originally designed to look for mutation-enriched non-coding regions. |
+| `-s` | SNP filter to apply to the input variants. Must be either `n` (no SNP filter), or the full path to a SNP file of your choice that will be filtered out of your input variants file. See [Installation](#installation) for downloading these files. |
+| `-p` | Promoter annotation file; those derived from Gencodev19 (human genome build hg19) and Gencodev24 (human genome build hg38) are provided. These can be replaced with any annotation of your choice, but the output figures will automatically colour-code regions by either the gene name linked to a promoter region or the mention "DistalRE" for distal regulatory element, as this tool was originally designed to look for mutation-enriched non-coding regions. |
 | `-r` | Genomic regions of interest that will be checked for significant enrichment of mutations. Must be supplied in the BED format specified by `-f`. The 4th column is required, but can be any string. Having the name there could make downstream analyses easier but isn't required by SMURF. |
-| `-m [allsamples\|regionsamples]` | Method used to calculate the background mutation rate (BMR) in the binomial test. **allsamples**: BMR is total number of mutations (across all samples) in regions divided by total bp in regions. **regionsamples**: BMR is calculated based on which samples have mutations in that region. The individual sample BMR is calculated as for global, and the average of the BMRs for the samples represented in the region is taken as the region BMR. |
+| `-m <allsamples \| regionsamples>` | Method used to calculate the background mutation rate (BMR) in the binomial test. **allsamples**: BMR is total number of mutations (across all samples) in regions divided by total bp in regions. **regionsamples**: BMR is calculated based on which samples have mutations in that region. The individual sample BMR is calculated as for global, and the average of the BMRs for the samples represented in the region is taken as the region BMR. |
 
 ## Input
 
@@ -70,7 +72,7 @@ qsub smurf.sh \
 | chr1 | 237701 | 237901 | Sample3,Sample5,Sample22 |
 | ... | ... | ... | ... |
 
-* Annotation files: GENCODE promoter annotation, and dbSNP sets for both hg19 and hg38 are provided within the SMuRF directory.
+* Annotation files: GENCODE promoter annotation for both hg19 and hg38 are provided. dbSNP annotation files can be downloaded from the [UCSC Table Browser](https://genome.ucsc.edu/cgi-bin/hgTables) (see [Installation](#installation)).
   * Promoter annotation: The Gencode set of TSS coordinates for each genome build (hg19: v19, hg38: v24) was downloaded from the UCSC table browser. Promoters were annotated from -2.5kb to +0.5kb around the TSS.
   * SNPs: dbSNP sets v147 were downloaded from the UCSC table browser for each genome build. The "Common" version of the database is made available with the tool; this can be used to remove only those that have a minor allele frequency of >= 1%, of use if one wants to avoid removing potentially interesting somatic mutations that also appear as very rare polymorphisms in the population. The larger file containing all SNPs (including those found at frequency < 1% ) can be downloaded from the dbSNP website.
 
@@ -82,10 +84,10 @@ SMuRF outputs a number of files, some for display and evaluation purposes, other
 
 | File | Description |
 |------|-------------|
-| filtered vcf files | VCF files will be filtered for SNPs and blacklist regions a specified by the user |
+| filtered vcf files | VCF files will be filtered for SNPs as specified by the user |
 |`FiltVarsInPeaks.txt` | Concatenated list of unique variants, overlapped with the input genomic regions, and including the names of samples they were identified in |
-| `summary.txt` | Summary of the number of input regions,number mutated, number mutated significantly, and their distribution in promoter and enhancer regions |
-| `annotated_regions.txt` | All input genomic regions annotated to either a promoter region (using Gencode as described above) OR to "DistalRE" (=distal regulatory element) if they fall outside promoter regions |
+| `summary.txt` | Summary of the number of input regions, number mutated, number mutated significantly, and their distribution in promoter and enhancer regions |
+| `annotated_regions.txt` | All input genomic regions annotated to either a promoter region (using Gencode as described above) OR to "DistalRE" (distal regulatory element) if they fall outside promoter regions |
 | `named_counts.txt` | Count of unique variants in each sample |
 | `Mutated_Regions.txt` and other files with that prefix | All information on the mutated regions and stats on significance of mutation. Other files include suffixes indicating the subsequent filtering steps. `Freq3`: only includes regions with >=3 mutations from >= 3 different samples. `qval0.05`: only includes regions significantly mutated |
 
@@ -93,11 +95,11 @@ SMuRF outputs a number of files, some for display and evaluation purposes, other
 
 | File | Description |
 |------|-------------|
-| `QQplot_Freq3.pdf` | Self-explanatory |
+| `QQplot_Freq3.pdf` | QQ-plot of regions' significance of mutation vs the theoretical distribution. |
 | `barplot_mut_inRegions_Counts_and_Perc.pdf` | Summary plots of the number of variants per sample and how many overlap with the provided genomic intervals |
 | `Mutation_Rate_Plot_Freq3_qval0.05.pdf` | Scatter plot of significantly mutated regions:-log10(q-value) vs region mutation rate |
 | `Mutation_Rate_Plot_Freq3_qval0.05_Promoters_VS_DistalREs.pdf` | Same as above with added promoter/DistalRE annotation |
-| `Sample_Frequency_Plot_Freq3_qval0.05.pdf` and `Sample_Frequency_Plot_Freq3_qval0.05_Promoters_VS_DistalREs.pdf` | Same as the two above, but with the number of unique samples mutated in the region as the x-axis as opposed tot he mutation rate |
+| `Sample_Frequency_Plot_Freq3_qval0.05.pdf` and `Sample_Frequency_Plot_Freq3_qval0.05_Promoters_VS_DistalREs.pdf` | Same as the two above, but with the number of unique samples mutated in the region as the x-axis as opposed to the mutation rate |
 | `Sample_Frequency_Plot_Freq3_qval0.05_DistalREs.pdf` and `Sample_Frequency_Plot_Freq3_qval0.05_Promoters.pdf` | Same as `Sample_Frequency_Plot_Freq3_qval0.05_Promoters_VS_DistalREs.pdf` but separating out those regions annotated to promoters and DistalREs |
 
 ### Files for use in dowstream analyses
