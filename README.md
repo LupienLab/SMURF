@@ -31,7 +31,7 @@ It requires the following R packages:
 ```shell
 sh smurf.sh \
 -o OUTDIR \
--f <vcf | bam> \
+-f <vcf | bed> \
 -v VARPATH \
 -s <n | PATH> \
 -p PROMPATH \
@@ -44,7 +44,7 @@ sh smurf.sh \
 | Parameter | Description |
 |-----------|-------------|
 | `-o` | Output directory (absolute path) |
-| `-f <vcf \| bam>` | Format chosen for input variants. **vcf**: individual VCF formatted files for each sample must be placed under a single directory. The full path to that directory is what should be supplied to the `-v` argument described below. **NOTE**: when using this option the sample names used for output files will be automatically generated from the names of the VCF files themselves. The `.vcf` at the end of the filename will be clipped off and the rest will be used as sample name. **bed**: a single BED file containing all variants to be analysed. The format must be the following: `chr start stop name`. The full path to that BED file is what should be supplied to the `-v` argument described below. |
+| `-f <vcf \| bed>` | Format chosen for input variants. **vcf**: individual VCF formatted files for each sample must be placed under a single directory. The full path to that directory is what should be supplied to the `-v` argument described below. **NOTE**: when using this option the sample names used for output files will be automatically generated from the names of the VCF files themselves. The `.vcf` at the end of the filename will be clipped off and the rest will be used as sample name. **bed**: a single BED file containing all variants to be analysed. The format must be the following: `chr start stop name`. The full path to that BED file is what should be supplied to the `-v` argument described below. |
 | `-v` | The input variants themselves; depending on the format chosen above, either the path to a directory containing individual VCF files OR the path to a single BED file. |
 | `-s` | SNP filter to apply to the input variants. Must be either `n` (no SNP filter), or the full path to a SNP file of your choice that will be filtered out of your input variants file. See [Installation](#installation) for downloading these files. |
 | `-p` | Promoter annotation file; those derived from Gencodev19 (human genome build hg19) and Gencodev24 (human genome build hg38) are provided. These can be replaced with any annotation of your choice, but the output figures will automatically colour-code regions by either the gene name linked to a promoter region or the mention "DistalRE" for distal regulatory element, as this tool was originally designed to look for mutation-enriched non-coding regions. |
@@ -59,8 +59,8 @@ sh smurf.sh \
 
   | chr | start | end | name |
   |-----|-------|-----|------|
-  | chr10 | 101776719 | 101776719 | Sample1 |
-  | chr10 | 101877882 | 101877882 | Sample2 |
+  | chr10 | 101776718 | 101776719 | Sample1 |
+  | chr10 | 101877881 | 101877882 | Sample2 |
   | ... | ... | ... | ... |
 
 * Genomic Regions: a BED file of genomic regions of interest. The format is chr/start/stop/name ; Note: the 'name' column is required but can be any string; it is recommended to use it for the names of biological samples from which each genomic region was identified for easy trace-back in downstream analyses, although this is not required for SMuRF. These genomic regions and the variants specified above do not need to come from matched samples. Unlike the set of input variants above, it is important that the genomic regions be mutually exclusive. If in your cohort regions from two different samples overlap, they should be merged as one and the sample name column can have all the contributing sample names in a comma-separated list.
